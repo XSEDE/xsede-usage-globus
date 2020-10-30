@@ -6,7 +6,10 @@ These programs have only been tested on our XCI metrics server and provide the f
 
 **sync-globus-transfer-dirs.py** - Copies Globus Auth usage files from Globus to the XCI metrics server.
 
-**globusauth-map-uuid-to-hostname.py** - Translates Globus Auth client ids to hostnames to comply with above metrics design.  The mapping is pulled from a Google doc that is manually maintained.  This runs nightly under the metrics account and outputs to /soft/metrics-tools/conf/globusauth-endpoints.json.
+**globusauth-map-uuid-to-hostname.py** - Translates Globus Auth client ids to hostnames to comply with above metrics design.  The mapping is pulled from a Google doc that is manually maintained.  This runs nightly under the metrics account using the following command: and outputs to /soft/metrics-tools/conf/globusauth-endpoints.json.
+```
+/soft/usage-process-python3/bin/python3 /soft/metrics-tools/bin/globusauth-map-uuid-to-hostname.py --output /soft/metrics-tools/conf/globusauth-endpoints.json
+```
 
 **globusauth-usage-parse.py** - Converts Globus Auth usage file to compliant format.  This is instantiated under the metrics account on the XCI metrics server nighly using the following command: 
 ```
