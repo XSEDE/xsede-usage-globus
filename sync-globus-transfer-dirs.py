@@ -25,7 +25,6 @@ parser.add_argument('source_dir')
 parser.add_argument('dest_endpoint_id')
 parser.add_argument('dest_dir')
 args = parser.parse_args()
-print(args)
 
 TOKEN_FILE = args.token
 CLIENT_ID = args.client_id
@@ -148,6 +147,8 @@ def main():
         print('STATUS =',status['status'])
 
     print('FINAL RESULT =', status['status'])
+    status_message = "{} new files transferred, {} total files, {} files unchanged".format(status['files_transferred'], status['files'], status['files_skipped'])
+    print(status_message)
 
 if __name__ == '__main__':
     main()
