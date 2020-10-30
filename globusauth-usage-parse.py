@@ -1,4 +1,4 @@
-#!/soft/metrics-tools/venv-1.0/bin/python
+#!/usr/bin/env python
 ################################################################################################
 # Parse a Globus Auth usage data file and return standard XSEDE usage data format in csv
 # Usage: ./<script> [<input_file>]
@@ -49,7 +49,11 @@ if __name__ == '__main__':
             o['USED_COMPONENT'] = 'org.globus.auth'
             
             row[0] = row[0][:-6]
-            dtm = datetime.strptime(row[0].strip(), INPUT_DATE_FORMAT)
+            date_string = row[0].strip()
+            # some files don't contain microsecond
+            if '.' not in date_string:
+                date_string = date_string + '.0'
+            dtm = datetime.strptime(date_string, INPUT_DATE_FORMAT)
             o['USE_TIMESTAMP'] = pytz.timezone(INPUT_TZ).localize(dtm).astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             o['USE_CLIENT'] = row[1]
