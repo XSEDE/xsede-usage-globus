@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import time
 import sys
 import webbrowser
@@ -19,19 +20,24 @@ SCOPES = ('openid email profile '
 
 parser = argparse.ArgumentParser(description='Sync usage files via Globus Transfer')
 parser.add_argument('--token', default='refresh-tokens.json', help='Specify token file to be able to automate/refresh')
-parser.add_argument('client_id')
-parser.add_argument('source_endpoint_id')
-parser.add_argument('source_dir')
-parser.add_argument('dest_endpoint_id')
-parser.add_argument('dest_dir')
+parser.add_argument('--config', required=True, help='Specify transfer args in config file')
 args = parser.parse_args()
 
+config_path = os.path.abspath(args.config)
+config = {}
+try:
+    with open(config_path, 'r') as cf:
+        config = json.load(cf)
+except Exception as e:
+    sys.stderr.write('ERROR "{}" parsing config={}\n'.format(e, config_path))
+    sys.exit(1)
+
 TOKEN_FILE = args.token
-CLIENT_ID = args.client_id
-SRC_ENDPOINT_ID = args.source_endpoint_id
-DEST_ENDPOINT_ID = args.dest_endpoint_id
-SRC_DIR = args.source_dir
-DEST_DIR = args.dest_dir
+CLIENT_ID = config["client_id"]
+SRC_ENDPOINT_ID = config["source_endpoint_id"]
+DEST_ENDPOINT_ID = config["dest_endpoint_id"]
+SRC_DIR = config["source_dir"]
+DEST_DIR = config["dest_dir"]
 
 get_input = getattr(__builtins__, 'raw_input', input)
 
