@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
+import fnmatch
 import json
 import os
-import time
 import sys
+import time
 import webbrowser
 
 from utils import enable_requests_logging, is_remote_session
@@ -18,26 +19,6 @@ REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
 SCOPES = ('openid email profile '
           'urn:globus:auth:scope:transfer.api.globus.org:all')
 
-parser = argparse.ArgumentParser(description='Sync usage files via Globus Transfer')
-parser.add_argument('--token', default='refresh-tokens.json', help='Specify token file to be able to automate/refresh')
-parser.add_argument('--config', required=True, help='Specify transfer args in config file')
-args = parser.parse_args()
-
-config_path = os.path.abspath(args.config)
-config = {}
-try:
-    with open(config_path, 'r') as cf:
-        config = json.load(cf)
-except Exception as e:
-    sys.stderr.write('ERROR "{}" parsing config={}\n'.format(e, config_path))
-    sys.exit(1)
-
-TOKEN_FILE = args.token
-CLIENT_ID = config["client_id"]
-SRC_ENDPOINT_ID = config["source_endpoint_id"]
-DEST_ENDPOINT_ID = config["dest_endpoint_id"]
-SRC_DIR = config["source_dir"]
-DEST_DIR = config["dest_dir"]
 
 get_input = getattr(__builtins__, 'raw_input', input)
 
@@ -93,8 +74,70 @@ def do_native_app_authentication(client_id, redirect_uri,
     # return a set of tokens, organized by resource server name
     return token_response.by_resource_server
 
+def sync_files(authorizer, config):
+    SRC_ENDPOINT_ID = config["source_endpoint_id"]
+    DEST_ENDPOINT_ID = config["dest_endpoint_id"]
+    SRC_DIR = config["source_dir"]
+    DEST_DIR = config["dest_dir"]
+    FILTER_PATTERN = config["filter_pattern"]
+
+    transfer = TransferClient(authorizer=authorizer)
+
+    # print out a directory listing from an endpoint
+    try:
+        transfer.endpoint_autoactivate(SRC_ENDPOINT_ID)
+        transfer.endpoint_autoactivate(DEST_ENDPOINT_ID)
+    except GlobusAPIError as ex:
+        print(ex)
+        if ex.http_status == 401:
+            sys.exit('Refresh token has expired. '
+                     'Please delete refresh-tokens.json and try again.')
+        else:
+            raise ex
+
+    matching_files = []
+    for entry in transfer.operation_ls(SRC_ENDPOINT_ID, path=SRC_DIR):
+        if entry['type'] == 'file' and fnmatch.fnmatch(entry['name'], FILTER_PATTERN):
+            matching_files.append(entry['name'])
+
+    tdata = TransferData(transfer, SRC_ENDPOINT_ID, DEST_ENDPOINT_ID, label="XCI Metrics", sync_level=0, verify_checksum=True, encrypt_data=True, notify_on_succeeded=False)
+    print("Syncing files ...")
+    for file in matching_files:
+        print("  " + file)
+        tdata.add_item(SRC_DIR + "/" + file, DEST_DIR + "/" + file)
+    transfer_result = transfer.submit_transfer(tdata)
+    print("task_id =", transfer_result["task_id"])
+
+    # status = 'ACTIVE', 'SUCCEEDED', 'FAILED', 'INACTIVE'
+    status = transfer.get_task(transfer_result["task_id"])
+    print('STATUS =', status['status'])
+    while status['status'] == 'ACTIVE':
+        time.sleep(5)
+        status = transfer.get_task(transfer_result["task_id"])
+        print('STATUS =',status['status'])
+
+    print('FINAL RESULT =', status['status'])
+    status_message = "{} new files transferred, {} total files, {} files unchanged".format(status['files_transferred'], status['files'], status['files_skipped'])
+    print(status_message)
 
 def main():
+    parser = argparse.ArgumentParser(description='Sync usage files via Globus Transfer')
+    parser.add_argument('--token', default='refresh-tokens.json', help='Specify token file to be able to automate/refresh')
+    parser.add_argument('--config', required=True, help='Specify transfer args in config file')
+    args = parser.parse_args()
+    
+    config_path = os.path.abspath(args.config)
+    config = {}
+    try:
+        with open(config_path, 'r') as cf:
+            config = json.load(cf)
+    except Exception as e:
+        sys.stderr.write('ERROR "{}" parsing config={}\n'.format(e, config_path))
+        sys.exit(1)
+    CLIENT_ID = config["client_id"]
+    
+    TOKEN_FILE = args.token
+
     tokens = None
     try:
         # if we already have tokens, load and use them
@@ -122,39 +165,11 @@ def main():
         expires_at=transfer_tokens['expires_at_seconds'],
         on_refresh=update_tokens_file_on_refresh)
 
-    transfer = TransferClient(authorizer=authorizer)
 
-    # print out a directory listing from an endpoint
-    try:
-        transfer.endpoint_autoactivate(SRC_ENDPOINT_ID)
-        transfer.endpoint_autoactivate(DEST_ENDPOINT_ID)
-    except GlobusAPIError as ex:
-        print(ex)
-        if ex.http_status == 401:
-            sys.exit('Refresh token has expired. '
-                     'Please delete refresh-tokens.json and try again.')
-        else:
-            raise ex
+    for transfer in config["transfers"]:
+        print(transfer)
+        sync_files(authorizer, transfer)
 
-    for entry in transfer.operation_ls(SRC_ENDPOINT_ID, path=SRC_DIR):
-        print(entry['name'] + ('/' if entry['type'] == 'dir' else ''))
-
-    tdata = TransferData(transfer, SRC_ENDPOINT_ID, DEST_ENDPOINT_ID, label="XCI Metrics", sync_level=0, verify_checksum=True, encrypt_data=True)
-    tdata.add_item(SRC_DIR, DEST_DIR, recursive=True)
-    transfer_result = transfer.submit_transfer(tdata)
-    print("task_id =", transfer_result["task_id"])
-
-    # status = 'ACTIVE', 'SUCCEEDED', 'FAILED', 'INACTIVE'
-    status = transfer.get_task(transfer_result["task_id"])
-    print('STATUS =', status['status'])
-    while status['status'] == 'ACTIVE':
-        time.sleep(5)
-        status = transfer.get_task(transfer_result["task_id"])
-        print('STATUS =',status['status'])
-
-    print('FINAL RESULT =', status['status'])
-    status_message = "{} new files transferred, {} total files, {} files unchanged".format(status['files_transferred'], status['files'], status['files_skipped'])
-    print(status_message)
 
 if __name__ == '__main__':
     main()
