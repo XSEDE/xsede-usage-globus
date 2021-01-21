@@ -97,8 +97,10 @@ def sync_files(authorizer, config):
 
     matching_files = []
     for entry in transfer.operation_ls(SRC_ENDPOINT_ID, path=SRC_DIR):
-        if entry['type'] == 'file' and fnmatch.fnmatch(entry['name'], FILTER_PATTERN):
-            matching_files.append(entry['name'])
+        if entry['type'] == 'file':
+            for filter in FILTER_PATTERN:
+                if fnmatch.fnmatch(entry['name'], filter):
+                    matching_files.append(entry['name'])
 
     tdata = TransferData(transfer, SRC_ENDPOINT_ID, DEST_ENDPOINT_ID, label="XCI Metrics", sync_level=0, verify_checksum=True, encrypt_data=True, notify_on_succeeded=False)
     print("Syncing files ...")
