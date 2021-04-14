@@ -18,6 +18,7 @@ from globus_sdk import TransferData
 REDIRECT_URI = 'https://auth.globus.org/v2/web/auth-code'
 SCOPES = ('openid email profile '
           'urn:globus:auth:scope:transfer.api.globus.org:all')
+TOKEN_FILE = ''
 
 
 get_input = getattr(__builtins__, 'raw_input', input)
@@ -45,6 +46,7 @@ def update_tokens_file_on_refresh(token_response):
     Callback function passed into the RefreshTokenAuthorizer.
     Will be invoked any time a new access token is fetched.
     """
+    global TOKEN_FILE
     save_tokens_to_file(TOKEN_FILE, token_response.by_resource_server)
 
 
@@ -138,6 +140,8 @@ def main():
         sys.exit(1)
     CLIENT_ID = config["client_id"]
     
+    # needed for update_tokens_file_on_refresh callback function below
+    global TOKEN_FILE
     TOKEN_FILE = args.token
 
     tokens = None
