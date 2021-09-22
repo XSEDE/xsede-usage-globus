@@ -36,7 +36,7 @@ reader = csv.DictReader(sio, dialect=csv.excel)
 rownum = 0
 
 for row in reader:
-	client_id = row["Client ID"]
+	client_id = row.get("Globus Client ID",row.get("Client ID"))
 	hostname = row["Hostname"]
 	data_list[client_id] = "MAP:"+hostname
 
