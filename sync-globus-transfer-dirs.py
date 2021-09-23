@@ -104,7 +104,7 @@ def sync_files(authorizer, config):
                 if fnmatch.fnmatch(entry['name'], filter):
                     matching_files.append(entry['name'])
 
-    tdata = TransferData(transfer, SRC_ENDPOINT_ID, DEST_ENDPOINT_ID, label="XCI Metrics", sync_level=0, verify_checksum=True, encrypt_data=True, notify_on_succeeded=False)
+    tdata = TransferData(transfer, SRC_ENDPOINT_ID, DEST_ENDPOINT_ID, label="XCI Metrics", sync_level=0, verify_checksum=True, encrypt_data=True)
     print("Syncing files ...")
     for file in matching_files:
         print("  " + file)
