@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/soft/xsede-globusauth-usage/python/bin/python3
 
 import argparse
 import fnmatch

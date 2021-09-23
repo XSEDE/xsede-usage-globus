@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/soft/xsede-globusauth-usage/python/bin/python3
 ################################################################################################
 # Parse a Globus Auth usage data file and return standard XSEDE usage data format in csv
 # Usage: ./<script> [<input_file>]

@@ -8,10 +8,10 @@ These programs have only been tested on our XCI metrics server and provide the f
 
 **globusauth-map-uuid-to-hostname.py** - Translates Globus Auth client ids to hostnames to comply with above metrics design.  The mapping is pulled from a Google doc that is manually maintained.  This runs nightly under the metrics account using the following command: 
 ```
-/soft/usage-process-python3/bin/python3 /soft/metrics-tools/bin/globusauth-map-uuid-to-hostname.py --output /soft/metrics-tools/conf/globusauth-endpoints.json
+/soft/xsede-globusauth-usage/python/bin/python3 /soft/xsede-globusauth-usage/PROD/bin/globusauth-map-uuid-to-hostname.py --output /soft/xsede-globusauth-usage/var/globusauth-endpoints.json
 ```
 
 **globusauth-usage-parse.py** - Converts Globus Auth usage file to compliant format.  This is instantiated under the metrics account on the XCI metrics server nighly using the following command: 
 ```
-/soft/usage-process/bin/repository_process.py -c /soft/usage-process/conf/repository_process_globusauth.conf
+/soft/XCI-Usage-Tools/PROD/usage-process/bin/repository_process.py -c /soft/xsede-globusauth-usage/conf/repository_process_globusauth.conf
 ```
