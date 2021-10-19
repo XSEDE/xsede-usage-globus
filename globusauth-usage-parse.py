@@ -37,11 +37,11 @@ if __name__ == '__main__':
         print('Please provide a CSV filename.')
         sys.exit(0)
 
-    output = csv.writer(sys.stdout, delimiter=',',quotechar='|')
+    output = csv.writer(sys.stdout, delimiter=',', quotechar='|')
 
     matches = 0 
     with gzip.open(file, 'rt') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
+        readCSV = csv.reader(csvfile, delimiter=',', quotechar='"')
         next(readCSV)
         for row in readCSV:
                 
