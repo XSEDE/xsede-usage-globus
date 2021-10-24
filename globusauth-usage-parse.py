@@ -12,13 +12,16 @@ import pytz
 import re
 import sys
 
+from backports.datetime_fromisoformat import MonkeyPatch
+MonkeyPatch.patch_fromisoformat()
+
 #Output fields:
 # Required: 'USED_COMPONENT', 'USE_TIMESTAMP', 'USE_CLIENT', 'USE_USER'
 
 #==== CUSTOMIZATION VARIABLES ==================
 
-INPUT_TZ = 'UTC'                     # One of pytz.common_timezones
-INPUT_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'  # A datetime.strptime format
+#INPUT_TZ = 'UTC'                     # One of pytz.common_timezones
+#INPUT_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'  # A datetime.strptime format
 # The fields we are generating
 OUTPUT_FIELDS = ['USED_COMPONENT', 'USE_TIMESTAMP', 'USE_CLIENT', 'USE_USER']
 
@@ -48,13 +51,15 @@ if __name__ == '__main__':
             o = {}
             o['USED_COMPONENT'] = 'org.globus.auth'
             
-            row[0] = row[0][:-6]
-            date_string = row[0].strip()
-            # some files don't contain microsecond
-            if '.' not in date_string:
-                date_string = date_string + '.0'
-            dtm = datetime.strptime(date_string, INPUT_DATE_FORMAT)
-            o['USE_TIMESTAMP'] = pytz.timezone(INPUT_TZ).localize(dtm).astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+#       2021-10-24 (JP) Properly parse ISOFORMAT datetime using a backport of Python 3.7+ fromisoformat
+#           row[0] = row[0][:-6]
+#           date_string = row[0].strip()
+#           # some files don't contain microsecond
+#           if '.' not in date_string:
+#               date_string = date_string + '.0'
+#           o['USE_TIMESTAMP'] = pytz.timezone(INPUT_TZ).localize(dtm).astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            o['USE_TIMESTAMP'] = datetime.fromisoformat(row[0]).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             o['USE_CLIENT'] = row[1]
 
