@@ -28,6 +28,8 @@ OUTPUT_FIELDS = ['USED_COMPONENT', 'USE_TIMESTAMP', 'USE_CLIENT', 'USE_USER', 'U
 # Regex for username from email
 REGEX_USERATDOMAIN = r'^([^@]+)@([^@]+)$'
 
+OLD_HEADERS = ('user_name','task_type','request_time','completion_time','source_endpoint_owner','source_endpoint','destination_endpoint_owner','destination_endpoint','source_shared_endpoint_host_owner','source_shared_endpoint_host','destination_shared_endpoint_host_owner','destination_shared_endpoint_host','status','bytes_transferred','files_processed','directories_processed','successful','failed','expired','canceled','skipped','bytes_checksummed','faults','checksum_faults','directory_expansions','taskid','duration(secs)','sync_level','encrypt_data','verify_checksum','preserve_modification_time','sync_delete')
+
 # Add filter code below if desired
 
 #==== END OF CUSTOMIZATIONS ====================
@@ -54,17 +56,24 @@ if __name__ == '__main__':
     if filewords[-1] in ('csv', 'usage', 'log'):
         filewords.pop()
     
-    input = csv.DictReader(input_fd, delimiter=',', quotechar='"')
+    input = csv.reader(input_fd, delimiter=',', quotechar='"')
     output = csv.writer(sys.stdout, delimiter=',', quotechar='|')
+    headers = None
+    
     TEMPLATE = {'USED_COMPONENT': 'org.globus.transfer',
                 'USED_COMPONENT_VERSION': None,
                 'USE_CLIENT': 'globus.org',
                 'USE_AMOUNT_UNITS': 'bytes'}
 
-    import pdb
-    pdb.set_trace()
     matches = 0
-    for line in input:
+    for raw in input:
+        if not headers:
+            if raw[0] == 'user_name':         # It's the headers
+                headers = list(raw)
+                continue                                # Next input row
+            headers = OLD_HEADERS
+        line = dict(zip(headers,raw))
+            
         o = TEMPLATE.copy()         # Initialize
 
         o['USE_TIMESTAMP']          = datetime.fromisoformat( line['request_time'] ).strftime( OUTPUT_DATE_FORMAT )
