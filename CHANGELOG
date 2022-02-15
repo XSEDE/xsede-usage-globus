@@ -1,0 +1,2 @@
+v1.11 20220215
+  - Remove byte quote ^b\'(.*)\'$ from use_user

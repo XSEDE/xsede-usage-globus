@@ -25,6 +25,8 @@ OUTPUT_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'       # A datetime.strftime format
 # The fields we are generating
 OUTPUT_FIELDS = ['USED_COMPONENT', 'USE_TIMESTAMP', 'USE_CLIENT', 'USE_USER', 'USED_RESOURCE', 'USAGE_STATUS', 'USE_AMOUNT', 'USE_AMOUNT_UNITS']
 
+# Regex for byte quote
+REGEX_BYTEQUOTE = r'^b\'(.*)\'$'
 # Regex for username from email
 REGEX_USERATDOMAIN = r'^([^@]+)@([^@]+)$'
 
@@ -78,11 +80,15 @@ if __name__ == '__main__':
 
         o['USE_TIMESTAMP']          = datetime.fromisoformat( line['request_time'] ).strftime( OUTPUT_DATE_FORMAT )
 
-        matchObj = re.search(REGEX_USERATDOMAIN, line['user_name'])
+        # Remove byte quote in the form ^b'<value>'$
+        matchQuote = re.search(REGEX_BYTEQUOTE, line['user_name'])
+        user_name = matchQuote.group(1) if matchQuote else line['user_name']
+        
+        matchObj = re.search(REGEX_USERATDOMAIN, user_name)
         if matchObj and matchObj.group(2) == 'xsede.org':
             o['USE_USER'] = 'xsede:' + matchObj.group(1)
         else:
-            o['USE_USER'] = 'local:' + line['user_name']
+            o['USE_USER'] = 'local:' + user_name
                 
         o['USED_RESOURCE']          = 'transfer {}/files'.format(line['files_processed'])
 
